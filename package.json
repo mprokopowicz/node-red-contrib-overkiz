@@ -1,0 +1,44 @@
+{
+  "name": "red-contrib-overkiz",
+  "version": "1.0.0",
+  "description": "Node-RED Module to control devices using the Overkiz IoT API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slep88/node-red-contrib-overkiz.git"
+  },
+  "keywords": [
+    "overkiz",
+    "node",
+    "red",
+    "nodered",
+    "iot",
+    "somfy",
+    "tahoma",
+    "connexoon",
+    "cozytouch"
+  ],
+  "author": "slep88",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/slep88/node-red-contrib-overkiz/issues"
+  },
+  "homepage": "https://github.com/slep88/node-red-contrib-overkiz#readme",
+  "node-red": {
+    "nodes": {
+      "overkiz-api": "dist/overkiz-api.js"
+    }
+  },
+  "dependencies": {
+    "overkiz-api": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.14",
+    "@types/node-red": "^0.20.1",
+    "node-red-contrib-typescript-node": "^0.1.0",
+    "typescript": "^3.9.6"
+  }
+}
