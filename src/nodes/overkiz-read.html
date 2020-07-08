@@ -1,0 +1,30 @@
+<script type="text/javascript">
+  RED.nodes.registerType('overkiz-read', {
+    category: 'network',
+    color: '#FFCC66',
+    inputs: 1,
+		outputs: 1,
+		icon: 'bridge.png',
+    defaults: {
+      name: { value: '' },
+      gateway: { value: '', type: 'overkiz-gateway' },
+    },
+    label: function () {
+      return this.name || 'overkiz-read';
+    }
+  });
+</script>
+
+<script type="text/x-red" data-template-name="overkiz-read">
+	<div class="form-row">
+		<label for="node-input-name"><i class="icon-tag"></i> Name</label>
+		<input type="text" id="node-input-name">
+	</div>
+	<div class="form-row">
+    <label for="node-input-tahomabox"><i class="icon-tag"></i> Gateway</label>
+    <input type="text" id="node-input-gateway">
+	</div>
+</script>
+
+<script type="text/x-red" data-help-name="overkiz-read">
+</script>

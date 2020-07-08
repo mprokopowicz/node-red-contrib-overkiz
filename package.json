@@ -29,7 +29,8 @@
   "homepage": "https://github.com/slep88/node-red-contrib-overkiz#readme",
   "node-red": {
     "nodes": {
-      "overkiz-api": "dist/overkiz-api.js"
+      "overkiz-gateway": "dist/nodes/overkiz-gateway.js",
+      "overkiz-read": "dist/nodes/overkiz-read.js"
     }
   },
   "dependencies": {
