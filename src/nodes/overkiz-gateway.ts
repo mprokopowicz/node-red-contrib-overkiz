@@ -1,12 +1,85 @@
-import { NodeProperties, Red } from "node-red";
-import { Node } from "node-red-contrib-typescript-node";
+import { Red, NodeProperties, Node as NRNode } from 'node-red';
+import { Node } from 'node-red-contrib-typescript-node';
+import { API, APIDevice } from 'overkiz-api';
+import { Application } from 'express';
+import { CookieJar } from 'request';
+
+export interface IOverkizGateway extends NRNode {
+  getDevices(): Promise<APIDevice[] | null>;
+  getDeviceByUrl(url: string): Promise<APIDevice | null>;
+};
+
+interface IGatewayNodeProperties extends NodeProperties {
+  host: string;
+};
+
+interface ICredentials {
+  username: string;
+  password: string;
+};
 
 module.exports = function (RED: Red) {
-  class OverkizGateway extends Node {
-    constructor(config: NodeProperties) {
+  class OverkizGateway extends Node implements IOverkizGateway {
+
+    private host: string;
+    private credentials: ICredentials;
+    private overkizApi: API;
+
+    constructor(config: IGatewayNodeProperties) {
       super(RED);
 
       this.createNode(config);
+      this.host = config.host;
+      this.overkizApi = new API({
+        host: this.host,
+        user: this.credentials.username,
+        password: this.credentials.password,
+        polling: {
+          always: false,
+          interval: 1000
+        }
+      });
+
+      let cookies = this.context().global.get('overkizGatewayCookies') as Map<string, CookieJar> || new Map<string, CookieJar>();
+      if (cookies.has(this.id)) {
+        (this.overkizApi as any).cookies = cookies.get(this.id);
+      }
+
+      this.on('close', function (removed, done) {
+        let cookies = this.context().global.get('overkizGatewayCookies') as Map<string, CookieJar> || new Map<string, CookieJar>();
+
+        if (removed) {
+          if (cookies.delete(this.id)) {
+            this.context().global.set('overkizGatewayCookies', cookies);
+          }
+        } else {
+          let anyApi = this.overkizApi as any;
+          if (anyApi.cookies as CookieJar) {
+            cookies.set(this.id, anyApi.cookies);
+            this.context().global.set('overkizGatewayCookies', cookies);
+          }
+        }
+        done();
+      });
+    }
+
+    public async getDevices(): Promise<APIDevice[] | null> {
+      try {
+        return await this.overkizApi.getDevices();
+      }
+      catch
+      {
+        return null;
+      }
+    }
+
+    public async getDeviceByUrl(url: string): Promise<APIDevice | null> {
+      let devices = await this.getDevices();
+      if (!devices) {
+        return null;
+      }
+
+      return devices.find(device => device.URL === url) || null;
     }
   }
 
@@ -14,6 +87,28 @@ module.exports = function (RED: Red) {
     credentials: {
       username: { type: "text" },
       password: { type: "password" }
+    }
+  });
+
+  (RED.httpAdmin as Application).get('/overkiz-gateway/:gatewayId/getDevices', async (req, res) => {
+    let node = RED.nodes.getNode(req.params.gatewayId);
+    if (node instanceof OverkizGateway) {
+      let devices = await node.getDevices();
+      if (devices) {
+        let devsNoApi: any[] = [];
+        devices.forEach(device => {
+          let devNoApi = device as any;
+          delete devNoApi.api;
+          devsNoApi.push(devNoApi);
+        });
+        res.json(devsNoApi);
+      }
+      else {
+        res.sendStatus(500);
+      }
+    }
+    else {
+      res.sendStatus(404);
     }
   });
 };
