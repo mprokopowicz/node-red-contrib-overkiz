@@ -30,7 +30,7 @@
   "node-red": {
     "nodes": {
       "overkiz-gateway": "dist/nodes/overkiz-gateway.js",
-      "overkiz-read": "dist/nodes/overkiz-state.js",
+      "overkiz-state": "dist/nodes/overkiz-state.js",
       "overkiz-execute": "dist/nodes/overkiz-execute.js"
     }
   },
