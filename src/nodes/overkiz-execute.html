@@ -1,5 +1,5 @@
 <script type="text/javascript">
-  RED.nodes.registerType('overkiz-read', {
+  RED.nodes.registerType('overkiz-execute', {
     category: 'network',
     color: '#FFCC66',
     inputs: 1,
@@ -9,25 +9,24 @@
       name: { value: '' },
       gateway: { value: '', type: 'overkiz-gateway' },
       device: { value: '' },
-      allStates: { value: true },
-      state: { value: '' }
+      command: { value: '' }
     },
     label: function () {
-      return this.name || 'overkiz-read';
+      return this.name || 'overkiz-execute';
     },
     oneditprepare: function generateEditForm() {
       var lastValidDevice = $('#node-input-device').val() || '';
-      var lastValidState = $('#node-input-state').val() || '';
+      var lastValidCommand = $('#node-input-command').val() || '';
 
       $('#node-input-device').replaceWith('<select id="node-input-device" name="node-input-device" style="width: 70%;">');
-      $('#node-input-state').replaceWith('<select id="node-input-state" name="node-input-state" style="width: 70%;">');
+      $('#node-input-command').replaceWith('<select id="node-input-command" name="node-input-command" style="width: 70%;">');
 
       var refreshInputs = function () {
         var gatewayNode = $('#node-input-gateway').val();
 
         if (gatewayNode.length <= 0 || gatewayNode === "_ADD_") {
           $('#node-input-device').empty().prop('disabled', true)
-          $('#node-input-state').empty().prop('disabled', true)
+          $('#node-input-command').empty().prop('disabled', true)
           return;
         }
 
@@ -36,7 +35,7 @@
           success: function (data) {
             if (data.length === 0) {
               $("#node-input-device").empty().html('<option value="_NO_DEVICE_" selected="selected">No devices found.</option>').prop('disabled', true);
-              $("#node-input-state").empty().prop('disabled', true);
+              $("#node-input-command").empty().prop('disabled', true);
             } else {
               var html = "";
 
@@ -46,24 +45,24 @@
 
               $('#node-input-device').empty().html(html).val(lastValidDevice).prop('disabled', false);
 
-              var states = undefined;
+              var commands = undefined;
               $.each(data, function (key, value) {
                 if (value.URL === $('#node-input-device').val()) {
-                  states = value.states;
+                  commands = value.commands;
                   return false;
                 }
               });
 
-              if (states) {
+              if (commands) {
                 html = "";
-                $.each(states, function (key, value) {
+                $.each(commands, function (key, value) {
                   html += '<option value="' + value.name + '">' + value.name + '</option>';
                 });
 
-                $('#node-input-state').empty().html(html).val(lastValidState).prop('disabled', false);
+                $('#node-input-command').empty().html(html).val(lastValidCommand).prop('disabled', false);
               }
               else {
-                $('#node-input-state').empty().prop('disabled', true);
+                $('#node-input-command').empty().prop('disabled', true);
               }
             }
           },
@@ -81,7 +80,7 @@
             }
 
             $('#node-input-device').empty().html('<option value="_NO_DEVICE_" selected="selected">' + errorText + '</option>').prop('disabled', true);
-            $('#node-input-state').empty().prop('disabled', true);
+            $('#node-input-command').empty().prop('disabled', true);
           }
         });
       };
@@ -92,33 +91,21 @@
         var newDev = $('#node-input-device').val();
         if (newDev && newDev.length > 0 && newDev !== '_NO_DEVICE_') {
           lastValidDevice = newDev;
-          if (!$('#node-input-allStates').prop('checked')) {
-            refreshInputs();
-          }
-        }
-      });
-
-      $('#node-input-allStates').on('change', function () {
-        if ($('#node-input-allStates').prop('checked')) {
-          $('#node-input-state-div').hide();
-        }
-        else {
-          $('#node-input-state-div').show();
           refreshInputs();
         }
       });
 
-      $('#node-input-state').on('change', function () {
-        var newState = $('#node-input-state').val();
-        if (newState && newState.length > 0) {
-          lastValidState = newState;
+      $('#node-input-command').on('change', function () {
+        var newCommand = $('#node-input-command').val();
+        if (newCommand && newCommand.length > 0) {
+          lastValidCommand = newCommand;
         }
       });
     }
   });
 </script>
 
-<script type="text/x-red" data-template-name="overkiz-read">
+<script type="text/x-red" data-template-name="overkiz-execute">
 	<div class="form-row">
 		<label for="node-input-name"><i class="icon-tag"></i> Name</label>
 		<input type="text" id="node-input-name">
@@ -132,15 +119,10 @@
     <input type="text" id="node-input-device">
   </div>
   <div class="form-row">
-    <label for="node-input-allStates"><i class="icon-tag"></i> &nbsp;</label>
-    <input type="checkbox" id="node-input-allStates" style="display:inline-block; width:15px; vertical-align:baseline;">
-    <span>Fetch all available states</span>
-  </div>
-  <div class="form-row" id="node-input-state-div">
-    <label for="node-input-state"><i class="icon-tag"></i> State</label>
-    <input type="text" id="node-input-state">
+    <label for="node-input-command"><i class="icon-tag"></i> Command</label>
+    <input type="text" id="node-input-command">
   </div>
 </script>
 
-<script type="text/x-red" data-help-name="overkiz-read">
+<script type="text/x-red" data-help-name="overkiz-execute">
 </script>

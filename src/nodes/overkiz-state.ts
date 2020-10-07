@@ -1,10 +1,9 @@
 import { NodeProperties, Red, NodeId } from "node-red";
 import { Node } from "node-red-contrib-typescript-node";
 import { IOverkizGateway } from "./overkiz-gateway";
-import { APIDevice } from "overkiz-api";
-import { stat } from "fs";
+import { APIObject } from "overkiz-api";
 
-interface IReadNodeProperties extends NodeProperties {
+interface IStateNodeProperties extends NodeProperties {
   gateway: NodeId;
   device: string;
   allStates: boolean;
@@ -12,11 +11,11 @@ interface IReadNodeProperties extends NodeProperties {
 };
 
 module.exports = function (RED: Red) {
-  class OverkizRead extends Node {
-    private config: IReadNodeProperties;
-    private device: APIDevice;
+  class OverkizState extends Node {
+    private config: IStateNodeProperties;
+    private device: APIObject;
 
-    constructor(config: IReadNodeProperties) {
+    constructor(config: IStateNodeProperties) {
       super(RED);
 
       this.createNode(config);
@@ -24,7 +23,7 @@ module.exports = function (RED: Red) {
       this.config = config;
       this.device = null;
 
-      let node = this;
+      const node = this;
 
       this.on('input', async function (msg, send, done) {
 
@@ -41,7 +40,7 @@ module.exports = function (RED: Red) {
         let error: string = undefined;
 
         if (node.config.allStates) {
-          let states = await node.device.refreshStates();
+          const states = await node.device.refreshStates();
           if (states) {
             msg.payload = states;
             send(msg);
@@ -50,7 +49,7 @@ module.exports = function (RED: Red) {
           }
         }
         else {
-          let state = await node.device.refreshState(node.config.state);
+          const state = await node.device.refreshState(node.config.state);
           if (state) {
             msg.payload = state;
             send(msg);
@@ -70,13 +69,13 @@ module.exports = function (RED: Red) {
         return;
       }
 
-      let gateway = this.getGateway();
+      const gateway = this.getGateway();
       if (!gateway) {
         this.device = null;
         return;
       }
 
-      this.device = await gateway.getDeviceByUrl(this.config.device);
+      this.device = await gateway.getObjectByUrl(this.config.device);
     }
 
     private getGateway(): IOverkizGateway | null {
@@ -84,5 +83,5 @@ module.exports = function (RED: Red) {
     }
   }
 
-  OverkizRead.registerType(RED, "overkiz-read");
+  OverkizState.registerType(RED, "overkiz-state");
 };

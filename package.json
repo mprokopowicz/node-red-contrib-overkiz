@@ -30,11 +30,12 @@
   "node-red": {
     "nodes": {
       "overkiz-gateway": "dist/nodes/overkiz-gateway.js",
-      "overkiz-read": "dist/nodes/overkiz-read.js"
+      "overkiz-read": "dist/nodes/overkiz-state.js",
+      "overkiz-execute": "dist/nodes/overkiz-execute.js"
     }
   },
   "dependencies": {
-    "overkiz-api": "^1.0.4"
+    "overkiz-api": "^1.1.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.7",

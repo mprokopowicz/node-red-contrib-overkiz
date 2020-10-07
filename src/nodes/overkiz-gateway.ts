@@ -1,12 +1,12 @@
 import { Red, NodeProperties, Node as NRNode } from 'node-red';
 import { Node } from 'node-red-contrib-typescript-node';
-import { API, APIDevice } from 'overkiz-api';
+import { API, APIObject } from 'overkiz-api';
 import { Application } from 'express';
 import { CookieJar } from 'request';
 
 export interface IOverkizGateway extends NRNode {
-  getDevices(): Promise<APIDevice[] | null>;
-  getDeviceByUrl(url: string): Promise<APIDevice | null>;
+  getObjects(): Promise<APIObject[] | null>;
+  getObjectByUrl(url: string): Promise<APIObject | null>;
 };
 
 interface IGatewayNodeProperties extends NodeProperties {
@@ -17,6 +17,23 @@ interface ICredentials {
   username: string;
   password: string;
 };
+
+interface IDeviceState {
+  name: string;
+}
+
+interface IDeviceCommand {
+  name: string;
+  nbParams: number;
+}
+
+interface IDeviceInfo {
+  URL: string;
+  name: string;
+  uiClass: string;
+  states: IDeviceState[];
+  commands: IDeviceCommand[];
+}
 
 module.exports = function (RED: Red) {
   class OverkizGateway extends Node implements IOverkizGateway {
@@ -40,20 +57,20 @@ module.exports = function (RED: Red) {
         }
       });
 
-      let cookies = this.context().global.get('overkizGatewayCookies') as Map<string, CookieJar> || new Map<string, CookieJar>();
+      const cookies = this.context().global.get('overkizGatewayCookies') as Map<string, CookieJar> || new Map<string, CookieJar>();
       if (cookies.has(this.id)) {
         (this.overkizApi as any).cookies = cookies.get(this.id);
       }
 
       this.on('close', function (removed, done) {
-        let cookies = this.context().global.get('overkizGatewayCookies') as Map<string, CookieJar> || new Map<string, CookieJar>();
+        const cookies = this.context().global.get('overkizGatewayCookies') as Map<string, CookieJar> || new Map<string, CookieJar>();
 
         if (removed) {
           if (cookies.delete(this.id)) {
             this.context().global.set('overkizGatewayCookies', cookies);
           }
         } else {
-          let anyApi = this.overkizApi as any;
+          const anyApi = this.overkizApi as any;
           if (anyApi.cookies as CookieJar) {
             cookies.set(this.id, anyApi.cookies);
             this.context().global.set('overkizGatewayCookies', cookies);
@@ -63,9 +80,9 @@ module.exports = function (RED: Red) {
       });
     }
 
-    public async getDevices(): Promise<APIDevice[] | null> {
+    public async getObjects(): Promise<APIObject[] | null> {
       try {
-        return await this.overkizApi.getDevices();
+        return await this.overkizApi.getObjects();
       }
       catch
       {
@@ -73,13 +90,13 @@ module.exports = function (RED: Red) {
       }
     }
 
-    public async getDeviceByUrl(url: string): Promise<APIDevice | null> {
-      let devices = await this.getDevices();
-      if (!devices) {
+    public async getObjectByUrl(url: string): Promise<APIObject | null> {
+      const objects = await this.getObjects();
+      if (!objects) {
         return null;
       }
 
-      return devices.find(device => device.URL === url) || null;
+      return objects.find(obj => obj.URL === url) || null;
     }
   }
 
@@ -91,17 +108,42 @@ module.exports = function (RED: Red) {
   });
 
   (RED.httpAdmin as Application).get('/overkiz-gateway/:gatewayId/getDevices', async (req, res) => {
-    let node = RED.nodes.getNode(req.params.gatewayId);
+    const node = RED.nodes.getNode(req.params.gatewayId);
     if (node instanceof OverkizGateway) {
-      let devices = await node.getDevices();
-      if (devices) {
-        let devsNoApi: any[] = [];
-        devices.forEach(device => {
-          let devNoApi = device as any;
-          delete devNoApi.api;
-          devsNoApi.push(devNoApi);
+      const objects = await node.getObjects();
+      if (objects) {
+        const devInfos: IDeviceInfo[] = [];
+
+        objects.forEach(device => {
+          const devInfo: IDeviceInfo =
+          {
+            URL: device.URL,
+            name: device.name,
+            uiClass: device.uiClass,
+            states: [],
+            commands: []
+          };
+
+          device.definition.states.forEach(devState => {
+            const state: IDeviceState =
+            {
+              name: devState.name
+            };
+            devInfo.states.push(state);
+          });
+
+          device.definition.commands.forEach(devCmd => {
+            const cmd: IDeviceCommand =
+            {
+              name: devCmd.name,
+              nbParams: devCmd.nbParams
+            };
+            devInfo.commands.push(cmd);
+          });
+
+          devInfos.push(devInfo);
         });
-        res.json(devsNoApi);
+        res.json(devInfos);
       }
       else {
         res.sendStatus(500);

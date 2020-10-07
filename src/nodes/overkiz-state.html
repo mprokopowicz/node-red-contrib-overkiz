@@ -1,0 +1,161 @@
+<script type="text/javascript">
+  RED.nodes.registerType('overkiz-state', {
+    category: 'network',
+    color: '#FFCC66',
+    inputs: 1,
+    outputs: 1,
+    icon: 'bridge.png',
+    defaults: {
+      name: { value: '' },
+      gateway: { value: '', type: 'overkiz-gateway' },
+      device: { value: '' },
+      allStates: { value: true },
+      state: { value: '' }
+    },
+    label: function () {
+      return this.name || 'overkiz-state';
+    },
+    oneditprepare: function generateEditForm() {
+      var lastValidDevice = $('#node-input-device').val() || '';
+      var lastValidState = $('#node-input-state').val() || '';
+
+      $('#node-input-device').replaceWith('<select id="node-input-device" name="node-input-device" style="width: 70%;">');
+      $('#node-input-state').replaceWith('<select id="node-input-state" name="node-input-state" style="width: 70%;">');
+
+      var refreshInputs = function () {
+        var gatewayNode = $('#node-input-gateway').val();
+
+        if (gatewayNode.length <= 0 || gatewayNode === "_ADD_") {
+          $('#node-input-device').empty().prop('disabled', true);
+          $('#node-input-state').empty().prop('disabled', true);
+          $('#node-input-allStates').prop('disabled', true);
+          $('#node-input-state-div').hide();
+          return;
+        }
+
+        $.ajax({
+          url: 'overkiz-gateway/' + $('#node-input-gateway').val() + '/getDevices',
+          success: function (data) {
+            if (data.length === 0) {
+              $("#node-input-device").empty().html('<option value="_NO_DEVICE_" selected="selected">No devices found.</option>').prop('disabled', true);
+              $("#node-input-state").empty().prop('disabled', true);
+              $('#node-input-allStates').prop('disabled', true);
+              $('#node-input-state-div').hide();
+            } else {
+              var html = "";
+
+              $.each(data, function (key, value) {
+                html += '<option value="' + value.URL + '">' + value.name + ' [' + value.uiClass + ']</option>';
+              });
+
+              $('#node-input-device').empty().html(html).val(lastValidDevice).prop('disabled', false);
+
+              var states = undefined;
+              $.each(data, function (key, value) {
+                if (value.URL === $('#node-input-device').val()) {
+                  states = value.states;
+                  return false;
+                }
+              });
+
+              if (states) {
+                html = "";
+                $.each(states, function (key, value) {
+                  html += '<option value="' + value.name + '">' + value.name + '</option>';
+                });
+
+                $('#node-input-state').empty().html(html).val(lastValidState).prop('disabled', false);
+                $('#node-input-allStates').prop('disabled', false);
+
+                if ($('#node-input-allStates').prop('checked')) {
+                  $('#node-input-state-div').hide();
+                } else {
+                  $('#node-input-state-div').show();
+                }
+              }
+              else {
+                $('#node-input-state').empty().prop('disabled', true);
+                $('#node-input-allStates').prop('disabled', true);
+                $('#node-input-state-div').hide();
+              }
+            }
+          },
+          error: function (err) {
+            var errorText = 'Unknown gateway error.'
+
+            switch (err.status) {
+              case 404:
+                errorText = 'Gateway node not deployed.';
+                break;
+
+              case 500:
+                errorText = 'Internal gateway error.'
+                break;
+            }
+
+            $('#node-input-device').empty().html('<option value="_NO_DEVICE_" selected="selected">' + errorText + '</option>').prop('disabled', true);
+            $('#node-input-state').empty().prop('disabled', true);
+            $('#node-input-allStates').prop('disabled', true);
+            $('#node-input-state-div').hide();
+          }
+        });
+      };
+
+      $('#node-input-gateway').on('change', refreshInputs);
+
+      $('#node-input-device').on('change', function () {
+        var newDev = $('#node-input-device').val();
+        if (newDev && newDev.length > 0 && newDev !== "_NO_DEVICE_") {
+          lastValidDevice = newDev;
+          if (!$('#node-input-allStates').prop('checked')) {
+            refreshInputs();
+          }
+        }
+      });
+
+      $('#node-input-allStates').on('change', function () {
+        if ($('#node-input-allStates').prop('checked')) {
+          $('#node-input-state-div').hide();
+        }
+        else {
+          $('#node-input-state-div').show();
+          refreshInputs();
+        }
+      });
+
+      $('#node-input-state').on('change', function () {
+        var newState = $('#node-input-state').val();
+        if (newState && newState.length > 0) {
+          lastValidState = newState;
+        }
+      });
+    }
+  });
+</script>
+
+<script type="text/x-red" data-template-name="overkiz-state">
+	<div class="form-row">
+		<label for="node-input-name"><i class="icon-tag"></i> Name</label>
+		<input type="text" id="node-input-name">
+	</div>
+	<div class="form-row">
+    <label for="node-input-gateway"><i class="icon-tag"></i> Gateway</label>
+    <input type="text" id="node-input-gateway">
+  </div>
+  <div class="form-row">
+    <label for="node-input-device"><i class="icon-tag"></i> Device</label>
+    <input type="text" id="node-input-device">
+  </div>
+  <div class="form-row">
+    <label for="node-input-allStates"><i class="icon-tag"></i> &nbsp;</label>
+    <input type="checkbox" id="node-input-allStates" style="display:inline-block; width:15px; vertical-align:baseline;">
+    <span>Fetch all available states</span>
+  </div>
+  <div class="form-row" id="node-input-state-div">
+    <label for="node-input-state"><i class="icon-tag"></i> State</label>
+    <input type="text" id="node-input-state">
+  </div>
+</script>
+
+<script type="text/x-red" data-help-name="overkiz-state">
+</script>
