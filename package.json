@@ -1,5 +1,5 @@
 {
-  "name": "red-contrib-overkiz",
+  "name": "node-red-contrib-overkiz",
   "version": "0.8.0",
   "description": "Node-RED Module to control devices using the Overkiz IoT API",
   "main": "index.js",
@@ -11,10 +11,8 @@
     "url": "git+https://github.com/slep88/node-red-contrib-overkiz.git"
   },
   "keywords": [
+    "node-red",
     "overkiz",
-    "node",
-    "red",
-    "nodered",
     "iot",
     "somfy",
     "tahoma",
