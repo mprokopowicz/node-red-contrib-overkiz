@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-overkiz",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Node-RED Module to control devices using the Overkiz IoT API",
   "main": "index.js",
   "scripts": {
@@ -33,14 +33,14 @@
     }
   },
   "dependencies": {
-    "overkiz-api": "^1.1.1"
+    "overkiz-api": "^1.1.1",
+    "node-red-contrib-typescript-node": "^0.1.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.7",
     "@types/node": "^14.0.23",
     "@types/node-red": "^0.20.1",
     "@types/request-promise": "^4.1.46",
-    "node-red-contrib-typescript-node": "^0.1.0",
     "typescript": "^3.9.6"
   }
 }
