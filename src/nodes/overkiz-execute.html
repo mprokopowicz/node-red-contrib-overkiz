@@ -56,7 +56,7 @@
               if (commands) {
                 html = "";
                 $.each(commands, function (key, value) {
-                  html += '<option value="' + value.name + '">' + value.name + '</option>';
+                  html += '<option value="' + value.name + '">' + value.name + ' [' + value.nbParams + ']</option>';
                 });
 
                 $('#node-input-command').empty().html(html).val(lastValidCommand).prop('disabled', false);

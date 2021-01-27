@@ -11,9 +11,11 @@ interface IExecuteNodeProperties extends NodeProperties {
 
 module.exports = function (RED: Red) {
   class OverkizExecute extends Node {
+
     private config: IExecuteNodeProperties;
     private device: APIObject;
     private commandDef: CommandDefinition;
+    private numExecutingCmds: number;
 
     constructor(config: IExecuteNodeProperties) {
       super(RED);
@@ -22,6 +24,7 @@ module.exports = function (RED: Red) {
 
       this.config = config;
       this.device = null;
+      this.numExecutingCmds = 0;
       this.status({ fill: "grey", shape: "ring", text: "Uninitialized" });
 
       const node = this;
@@ -32,7 +35,7 @@ module.exports = function (RED: Red) {
         if (!node.device || !node.commandDef) {
           if (done) {
             done("Failed to initialize device and/or command.");
-            this.status({ fill: "red", shape: "dot", text: "Error" });
+            node.status({ fill: "red", shape: "dot", text: "Error" });
           }
           return;
         }
@@ -41,13 +44,22 @@ module.exports = function (RED: Red) {
 
         let error: string = undefined;
 
-        const cmdParams = msg.payload as any[];
-        if (!cmdParams || cmdParams.length < node.commandDef.nbParams) {
+        let cmdParams: any[] = [];
+        if (msg.payload != null) {
+          if (Array.isArray(msg.payload)) {
+            cmdParams = msg.payload;
+          } else {
+            cmdParams = [msg.payload];
+          }
+        }
+
+        if (cmdParams.length < node.commandDef.nbParams) {
           error = `Received too less parameters for command "${node.commandDef.name}". Expected: ${node.commandDef.nbParams}, received: ${cmdParams.length}.`;
         }
         else {
           try {
-            this.status({ fill: "green", shape: "dot", text: "Executing" });
+            node.numExecutingCmds++;
+            node.status({ fill: "green", shape: "dot", text: "Executing" });
 
             let command: any = { name: node.commandDef.name };
             if (node.commandDef.nbParams > 0) {
@@ -55,18 +67,25 @@ module.exports = function (RED: Red) {
             }
             const result = await node.device.exec(command);
             msg = { payload: result };
-            send(msg);
+            if (node.numExecutingCmds === 1) {
+              send(msg);
+            }
           }
           catch {
             error = `Execution of command "${node.commandDef.name}" failed.`;
           }
+          finally {
+            node.numExecutingCmds--;
+          }
         }
 
-        if (error) {
-          this.status({ fill: "red", shape: "dot", text: "Error" });
-        }
-        else {
-          this.status({ fill: "yellow", shape: "ring", text: "Idle" });
+        if (node.numExecutingCmds === 0) {
+          if (error) {
+            node.status({ fill: "red", shape: "dot", text: "Error" });
+          }
+          else {
+            node.status({ fill: "yellow", shape: "ring", text: "Idle" });
+          }
         }
 
         if (done) {
