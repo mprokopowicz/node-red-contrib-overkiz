@@ -1,7 +1,7 @@
 import { Red, NodeProperties, Node as NRNode } from 'node-red';
 import { Node } from 'node-red-contrib-typescript-node';
 import { API, APIObject, PlatformLoginHandler, CozytouchLoginHandler, DefaultLoginHandler } from 'overkiz-api';
-import { Application } from 'express';
+import e, { Application } from 'express';
 import { CookieJar } from 'request';
 
 export interface IOverkizGateway extends NRNode {
@@ -69,26 +69,29 @@ module.exports = function (RED: Red) {
         }
       });
 
-      const cookies = this.context().global.get('overkizGatewayCookies') as Map<string, CookieJar> || new Map<string, CookieJar>();
-      if (cookies.has(this.id)) {
-        (this.overkizApi as any).cookies = cookies.get(this.id);
-      }
+      this.context().get('overkizGatewayCookies', (err, cookies: CookieJar) => {
+        if (err) {
+          console.error(err);
+          return;
+        }
+
+        if (cookies) {
+          (this.overkizApi as any).cookies = cookies;
+        }
+      });
 
       this.on('close', function (removed, done) {
-        const cookies = this.context().global.get('overkizGatewayCookies') as Map<string, CookieJar> || new Map<string, CookieJar>();
-
-        if (removed) {
-          if (cookies.delete(this.id)) {
-            this.context().global.set('overkizGatewayCookies', cookies);
+        this.context().get('overkizGatewayCookies', (err: any, cookies: CookieJar) => {
+          if (removed) {
+            this.context().set('overkizGatewayCookies', null);
+          } else {
+            const anyApi = this.overkizApi as any;
+            if (anyApi.cookies as CookieJar) {
+              this.context().global.set('overkizGatewayCookies', anyApi.cookies);
+            }
           }
-        } else {
-          const anyApi = this.overkizApi as any;
-          if (anyApi.cookies as CookieJar) {
-            cookies.set(this.id, anyApi.cookies);
-            this.context().global.set('overkizGatewayCookies', cookies);
-          }
-        }
-        done();
+          done();
+        });
       });
     }
 
