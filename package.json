@@ -1,5 +1,5 @@
 {
-  "name": "node-red-contrib-overkiz",
+  "name": "node-red-contrib-overkiz2",
   "version": "1.0.0",
   "description": "Node-RED Module to control devices using the Overkiz IoT API",
   "main": "index.js",
@@ -27,9 +27,9 @@
   "homepage": "https://github.com/slep88/node-red-contrib-overkiz#readme",
   "node-red": {
     "nodes": {
-      "overkiz-gateway": "dist/nodes/overkiz-gateway.js",
-      "overkiz-state": "dist/nodes/overkiz-state.js",
-      "overkiz-execute": "dist/nodes/overkiz-execute.js"
+      "overkiz-gateway2": "dist/nodes/overkiz-gateway.js",
+      "overkiz-state2": "dist/nodes/overkiz-state.js",
+      "overkiz-execute2": "dist/nodes/overkiz-execute.js"
     }
   },
   "dependencies": {
